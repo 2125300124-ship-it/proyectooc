@@ -1,0 +1,73 @@
+  <text class="campo" x="16" y="183">metodo_pago, imagen</text><text class="campo" x="16" y="206">estado</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <title>Diagrama relacional de tienda de productos coleccionables</title>
+  <defs>
+    <marker id="flecha" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .tabla { fill: #ffffff; stroke: #1e293b; stroke-width: 2; }
+      .encabezado { fill: #0f766e; }
+      .titulo { fill: #ffffff; font: 700 20px Arial, sans-serif; }
+      .campo { fill: #1e293b; font: 15px Arial, sans-serif; }
+      .relacion { stroke: #334155; stroke-width: 2; marker-end: url(#flecha); }
+      .nota { fill: #475569; font: 14px Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" fill="#f1f5f9"/>
+  <text x="600" y="38" text-anchor="middle" fill="#0f172a" font="700 26px Arial, sans-serif">Tienda de productos coleccionables</text>
+
+  <line class="relacion" x1="255" y1="190" x2="350" y2="190"/>
+  <line class="relacion" x1="255" y1="500" x2="350" y2="500"/>
+  <line class="relacion" x1="850" y1="190" x2="945" y2="190"/>
+  <line class="relacion" x1="850" y1="500" x2="945" y2="500"/>
+
+  <g transform="translate(45 105)">
+    <rect class="tabla" width="210" height="190" rx="4"/>
+    <rect class="encabezado" width="210" height="42" rx="4"/>
+    <text class="titulo" x="105" y="28" text-anchor="middle">clientes</text>
+    <text class="campo" x="16" y="68">PK id</text><text class="campo" x="16" y="91">nombre</text>
+    <text class="campo" x="16" y="114">apellido</text><text class="campo" x="16" y="137">correo</text>
+    <text class="campo" x="16" y="160">telefono</text><text class="campo" x="16" y="183">estado</text>
+  </g>
+
+  <g transform="translate(350 105)">
+    <rect class="tabla" width="250" height="190" rx="4"/>
+    <rect class="encabezado" width="250" height="42" rx="4"/>
+    <text class="titulo" x="125" y="28" text-anchor="middle">ventas</text>
+    <text class="campo" x="16" y="68">PK id</text><text class="campo" x="16" y="91">FK cliente_id</text>
+    <text class="campo" x="16" y="114">FK producto_id</text><text class="campo" x="16" y="137">fecha_venta</text>
+    <text class="campo" x="16" y="160">subtotal, impuesto, total</text><text class="campo" x="16" y="183">metodo_pago, estado</text>
+  </g>
+
+  <g transform="translate(945 105)">
+    <rect class="tabla" width="210" height="190" rx="4"/>
+    <rect class="encabezado" width="210" height="42" rx="4"/>
+    <text class="titulo" x="105" y="28" text-anchor="middle">productos</text>
+    <text class="campo" x="16" y="68">PK id</text><text class="campo" x="16" y="91">FK categoria_id</text>
+    <text class="campo" x="16" y="114">FK proveedor_id</text><text class="campo" x="16" y="137">nombre, precio</text>
+    <text class="campo" x="16" y="160">existencia, marca</text><text class="campo" x="16" y="183">imagen, estado</text>
+  </g>
+
+  <g transform="translate(350 415)">
+    <rect class="tabla" width="250" height="190" rx="4"/>
+    <rect class="encabezado" width="250" height="42" rx="4"/>
+    <text class="titulo" x="125" y="28" text-anchor="middle">categorias</text>
+    <text class="campo" x="16" y="68">PK id</text><text class="campo" x="16" y="91">nombre</text>
+    <text class="campo" x="16" y="114">descripcion, tipo</text><text class="campo" x="16" y="137">edad_recomendada</text>
+    <text class="campo" x="16" y="160">imagen</text><text class="campo" x="16" y="183">estado</text>
+  </g>
+
+  <g transform="translate(945 415)">
+    <rect class="tabla" width="210" height="190" rx="4"/>
+    <rect class="encabezado" width="210" height="42" rx="4"/>
+    <text class="titulo" x="105" y="28" text-anchor="middle">proveedores</text>
+    <text class="campo" x="16" y="68">PK id</text><text class="campo" x="16" y="91">nombre_empresa</text>
+    <text class="campo" x="16" y="114">contacto, correo</text><text class="campo" x="16" y="137">telefono, ciudad</text>
+    <text class="campo" x="16" y="160">imagen</text><text class="campo" x="16" y="183">estado</text>
+  </g>
+
+  <text class="nota" x="600" y="680" text-anchor="middle">FK: eliminación RESTRICT | actualización CASCADE</text>
+  <text class="nota" x="600" y="705" text-anchor="middle">Todas las PK se llaman id y las tablas están en plural.</text>
+</svg>
