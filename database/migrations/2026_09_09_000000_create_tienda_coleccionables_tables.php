@@ -8,31 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('clientes', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre');
-            $table->string('apellido');
-            $table->string('correo')->unique();
-            $table->string('telefono');
-            $table->string('direccion');
-            $table->string('contrasena');
-                $table->string('imagen');
-            $table->date('fecha_registro');
-            $table->boolean('estado')->default(true);
-            $table->timestamps();
-        });
-
-        Schema::create('categorias', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre')->unique();
-            $table->text('descripcion');
-            $table->string('tipo');
-            $table->unsignedTinyInteger('edad_recomendada');
-            $table->string('imagen');
-            $table->boolean('estado')->default(true);
-            $table->timestamps();
-        });
-
         Schema::create('proveedores', function (Blueprint $table) {
             $table->id();
             $table->string('nombre_empresa');
@@ -80,7 +55,5 @@ return new class extends Migration
         Schema::dropIfExists('ventas');
         Schema::dropIfExists('productos');
         Schema::dropIfExists('proveedores');
-        Schema::dropIfExists('categorias');
-        Schema::dropIfExists('clientes');
     }
 };

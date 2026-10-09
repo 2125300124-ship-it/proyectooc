@@ -3,78 +3,172 @@
 namespace App\Http\Controllers;
 
 use App\Models\Administrador;
+use App\Services\CloudinaryImageStorage;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class AdministradorController extends Controller
 {
-    public function listar()
-    {
-        $admins = Administrador::latest()->paginate(20);
+    protected string $module = 'administradores';
+    protected string $moduleTitle = 'Administradores';
+    protected string $modelClass = Administrador::class;
+    protected array $optionSources = [];
+    protected array $fields = [
+        ['name' => 'nombres', 'label' => 'Nombres', 'required' => true, 'rules' => ['min:2', 'max:100', "regex:/^[\\p{L}\\p{M}\\s'-]+$/u"]],
+        ['name' => 'apellidos', 'label' => 'Apellidos', 'required' => true, 'rules' => ['min:2', 'max:100', "regex:/^[\\p{L}\\p{M}\\s'-]+$/u"]],
+        ['name' => 'correo', 'label' => 'Correo', 'type' => 'email', 'required' => true, 'unique' => true],
+        ['name' => 'usuario', 'label' => 'Usuario', 'required' => true, 'unique' => true, 'rules' => ['max:50']],
+        ['name' => 'contrasena', 'column' => 'contraseña', 'label' => 'Contraseña', 'type' => 'password', 'required' => true, 'rules' => ['min:8']],
+        ['name' => 'rol', 'label' => 'Rol', 'type' => 'select', 'required' => true, 'options' => ['Dueño' => 'Dueño', 'Inventario' => 'Inventario', 'Ventas' => 'Ventas']],
+        ['name' => 'estado', 'label' => 'Estado', 'type' => 'select', 'required' => true, 'options' => ['1' => 'Activo', '0' => 'Inactivo']],
+        ['name' => 'imagen', 'label' => 'Imagen', 'type' => 'image'],
+    ];
+    protected array $examples = [
+        ['id' => 1, 'nombres' => 'Ana', 'apellidos' => 'García', 'correo' => 'ana@example.test', 'usuario' => 'ana', 'rol' => 'Inventario', 'estado' => '1'],
+    ];
 
-        return view('administradores.listado', compact('admins'));
+    public function listar(): View
+    {
+        $registros = Administrador::query()->latest()->limit(100)->get()->toArray();
+
+        return view('administradores.mvc.listado', $this->datosVista(['registros' => $registros]));
     }
 
-    public function vistaFormulario()
+    public function vistaFormulario(): View
     {
-        return view('administradores.registro');
+        return view('administradores.mvc.registro', $this->datosVista());
     }
 
-    public function registrar(Request $request)
+    public function registrar(Request $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombres' => ['required', 'string', 'max:100'],
-            'apellidos' => ['required', 'string', 'max:100'],
-            'correo' => ['required', 'email', 'unique:administradores,correo'],
-            'usuario' => ['required', 'string', 'max:50', 'unique:administradores,usuario'],
-            'contrasena' => ['required', 'string', 'min:8'],
-            'rol' => ['required', 'string', 'max:50'],
-            'estado' => ['nullable', 'boolean'],
-            'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        $datos = Validator::make($request->all(), $this->reglasValidacion())->validate();
+        $registro = Administrador::create($this->prepararDatos($datos));
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        return redirect()->route('administradores.listar')
+            ->with('exito', 'Registro de Administradores guardado correctamente.')
+            ->with('registroId', $registro->getKey());
+    }
+
+    public function vistaEdicion(int $id): View
+    {
+        $registro = Administrador::query()->findOrFail($id);
+
+        return view('administradores.mvc.edicion', $this->datosVista([
+            'id' => $id,
+            'registro' => $registro->toArray(),
+        ]));
+    }
+
+    public function actualizar(Request $request, int $id): RedirectResponse
+    {
+        $registro = Administrador::query()->findOrFail($id);
+        $datos = Validator::make($request->all(), $this->reglasValidacion($id))->validate();
+        $imagenAnterior = $registro->imagen;
+        $registro->update($this->prepararDatos($datos));
+        if ($registro->imagen !== $imagenAnterior) {
+            app(CloudinaryImageStorage::class)->delete($imagenAnterior);
         }
 
-        $admin = new Administrador();
-        $admin->nombres = $request->nombres;
-        $admin->apellidos = $request->apellidos;
-        $admin->correo = $request->correo;
-        $admin->usuario = $request->usuario;
-        $admin->contraseña = Hash::make($request->contrasena);
-        $admin->rol = $request->rol;
-        $admin->estado = $request->has('estado') ? (bool) $request->estado : true;
+        return redirect()->route('administradores.listar')
+            ->with('exito', 'Registro de Administradores actualizado correctamente.');
+    }
 
-        if ($request->hasFile('imagen')) {
-            $admin->imagen = $request->file('imagen')->store('administradores', 'public');
+    public function vistaMostrar(int $id): View
+    {
+        $registro = Administrador::query()->findOrFail($id);
+
+        return view('administradores.mvc.mostrar', $this->datosVista([
+            'id' => $id,
+            'registro' => $registro->toArray(),
+        ]));
+    }
+
+    public function borrar(int $id): RedirectResponse
+    {
+        $registro = Administrador::query()->findOrFail($id);
+        $imagen = $registro->imagen;
+        $registro->delete();
+        app(CloudinaryImageStorage::class)->delete($imagen);
+
+        return redirect()->route('administradores.listar')
+            ->with('exito', 'Registro de Administradores eliminado correctamente.');
+    }
+
+    private function datosVista(array $extra = []): array
+    {
+        $campos = $this->fields;
+
+        return array_merge([
+            'modulo' => $this->module,
+            'titulo' => $this->moduleTitle,
+            'modelo' => 'Administrador',
+            'campos' => $campos,
+            'registro' => [],
+        ], $extra);
+    }
+
+    private function reglasValidacion(?int $id = null): array
+    {
+        $reglas = [];
+
+        foreach ($this->fields as $campo) {
+            $tipo = $campo['type'] ?? 'text';
+            $requerido = ($campo['required'] ?? false)
+                && !($id !== null && in_array($tipo, ['password', 'image'], true));
+            $reglasCampo = [$requerido ? 'required' : 'nullable'];
+
+            if ($tipo === 'email') {
+                $reglasCampo[] = 'email';
+            } elseif ($tipo === 'image') {
+                $reglasCampo = array_merge($reglasCampo, ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048']);
+            } elseif ($tipo === 'select') {
+                $reglasCampo[] = Rule::in(array_keys($campo['options']));
+            }
+
+            if ($campo['unique'] ?? false) {
+                $reglaUnica = Rule::unique((new Administrador())->getTable(), $campo['name']);
+                $reglasCampo[] = $id === null ? $reglaUnica : $reglaUnica->ignore($id);
+            }
+
+            $reglas[$campo['name']] = array_merge($reglasCampo, $campo['rules'] ?? []);
         }
 
-        $admin->save();
-
-        return redirect()->route('administradores.listado')->with('exito', 'Administrador registrado correctamente');
+        return $reglas;
     }
 
-    public function vistaEdicion()
+    private function prepararDatos(array $datos): array
     {
-        return view('administradores.edicion');
-    }
+        foreach ($this->fields as $campo) {
+            $nombre = $campo['name'];
 
-    public function actualizar()
-    {
-        return 'Aqui va el update';
-    }
+            if (($campo['type'] ?? '') === 'image') {
+                if (!isset($datos[$nombre])) {
+                    unset($datos[$nombre]);
+                    continue;
+                }
 
-    public function vistaMostrar()
-    {
-        return view('administradores.mostrar');
-    }
+                $datos[$nombre] = app(CloudinaryImageStorage::class)->upload($datos[$nombre], $this->module);
+            }
 
-    public function borrar()
-    {
-        return 'Aqui va el delete';
+            if (isset($campo['column']) && array_key_exists($nombre, $datos)) {
+                if (($campo['type'] ?? '') === 'password') {
+                    if (blank($datos[$nombre])) {
+                        unset($datos[$nombre]);
+                        continue;
+                    }
+
+                    $datos[$nombre] = Hash::make($datos[$nombre]);
+                }
+
+                $datos[$campo['column']] = $datos[$nombre];
+                unset($datos[$nombre]);
+            }
+        }
+
+        return $datos;
     }
 }

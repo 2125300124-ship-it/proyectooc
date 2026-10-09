@@ -3,12 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Cliente extends Model
+class Cliente extends Authenticatable
 {
     use HasFactory;
 
     protected $table = 'clientes';
-    protected $fillable = ['nombres', 'apellidos', 'correo', 'contraseña', 'direccion', 'imagen', 'estado'];
+    protected $fillable = ['nombres', 'apellidos', 'correo', 'google_id', 'contraseña', 'direccion', 'imagen', 'estado'];
+    protected $hidden = ['contraseña'];
+
+    protected function casts(): array
+    {
+        return ['estado' => 'boolean'];
+    }
+
+    public function getAuthPassword(): string
+    {
+        return $this->contraseña;
+    }
 }
